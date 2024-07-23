@@ -369,6 +369,5 @@ class RusApp(TestApp):
         else:
             self.show_results()
 
-if __name__ == "__main__":
-    app = MainApp()
-    app.mainloop()
+app = MainApp()
+app.mainloop()
