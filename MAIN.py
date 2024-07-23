@@ -34,7 +34,7 @@ def load_questions(file_path):
 
 def send_email(message):
     sender = ""  # Введите свой адрес электронной почты
-    password = ""  # Введите свой пароль
+    password = ""   # Введите свой пароль
     recipient = ""  # Введите адрес получателя
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.starttls()
@@ -204,7 +204,8 @@ class TestApp(tk.Tk):
         global Type_class
         
         current_date = date.today()
-        s = str(current_date) + " "        
+        s = str(current_date) + " "   
+        m = ""
         
         if Type_class == 0:
             error = " " * 130
@@ -219,6 +220,8 @@ class TestApp(tk.Tk):
             py.write("MATH: " + result + "   " + str(self.score) + "/" + "20" + " \n")
             py.write(" \n")
             py.close()
+            
+            m = "MATH: " + result + "   " + str(self.score) + "/" + "20" + " \n"
         else:
             error = " " * 130
             error_label = tk.Label(self.scrollable_frame, text=error, wraplength=350, justify=tk.CENTER, anchor=tk.CENTER)
@@ -232,6 +235,10 @@ class TestApp(tk.Tk):
             py.write("RUS: " + result + "   " + str(self.score) + "/" + "20" + " \n")
             py.write(" \n")
             py.close()
+            
+            m = "RUS: " + result + "   " + str(self.score) + "/" + "20" + " \n"
+            
+        send(m)
 
         self.finish_button.config(text="В главное меню", command=self.return_to_main_menu)
         self.submit_button.config(state=tk.DISABLED)
