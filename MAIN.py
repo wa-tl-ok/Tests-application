@@ -12,7 +12,7 @@ global Type_class
 Type_class = -1
 
 def set_window_position(window, x, y):
-    window.geometry(f"400x500+{x}+{y}")
+    window.geometry(f"400x550+{x}+{y}")
 
 def Get_time() -> int:
     dt_now = datetime.datetime.now()
@@ -59,10 +59,10 @@ class MainApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Выбор Теста")
-        set_window_position(self, 100, 100)
+        set_window_position(self, 50, 50)
 
         style = ttk.Style()
-        style.theme_use('vista') 
+        style.theme_use('vista')
         style.configure('TButton', padding=20, font=('Arial', 15), width=15)
         style.configure('TLabel', font=('Arial', 20))
         
@@ -71,6 +71,9 @@ class MainApp(tk.Tk):
 
         style.configure('Russian.TButton', background='#e74c3c', foreground='#3498db')
         style.map('Russian.TButton', background=[('active', '#c0392b')])
+        
+        style.configure('Finish.TButton', background='black', foreground='black', borderwidth=2, relief='solid')
+        style.map('Finish.TButton', background=[('active', 'black')])        
 
         self.choice_frame = tk.Frame(self)
         self.choice_frame.pack(pady=20, anchor=tk.CENTER)
@@ -87,6 +90,22 @@ class MainApp(tk.Tk):
         self.russian_button = ttk.Button(self.choice_frame, text="Russian language", style='Russian.TButton', command=lambda: self.start_test("russian"))
         self.russian_button.pack(pady=20, anchor=tk.CENTER)
 
+        self.finish_button = ttk.Button(self.choice_frame, text="Finish", command=self.finish_app, style='Finish.TButton')
+        self.finish_button.pack(pady=20, anchor=tk.CENTER)
+
+    def start_test(self, subject):
+        self.destroy()
+        
+        if subject == "math":
+            test_app = MathApp(subject)
+            test_app.mainloop()
+        else:
+            test_app = RusApp(subject)
+            test_app.mainloop()
+
+    def finish_app(self):
+        self.destroy()
+
     def start_test(self, subject):
         self.destroy()
         
@@ -101,7 +120,7 @@ class TestApp(tk.Tk):
     def __init__(self, subject, questions=None):
         super().__init__()
         self.title("Тест")
-        set_window_position(self, 100, 100)
+        set_window_position(self, 50, 50)
         self.subject = subject
         self.questions = questions
         self.current_question = 0
@@ -254,7 +273,7 @@ class TestApp(tk.Tk):
 class MathApp(TestApp):
     def __init__(self, subject):
         super().__init__(subject)
-        set_window_position(self, 100, 100)
+        set_window_position(self, 50, 50)
             
     def display_question(self):
         global Type_class
@@ -307,7 +326,7 @@ class MathApp(TestApp):
 class RusApp(TestApp):
     def __init__(self, subject):
         super().__init__(subject)
-        set_window_position(self, 100, 100)
+        set_window_position(self, 50, 50)
         
     def display_question(self):
         global Type_class
