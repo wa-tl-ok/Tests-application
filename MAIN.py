@@ -11,6 +11,9 @@ from datetime import date
 global Type_class
 Type_class = -1
 
+def set_window_position(window, x, y):
+    window.geometry(f"400x500+{x}+{y}")
+
 def Get_time() -> int:
     dt_now = datetime.datetime.now()
     time = str(dt_now)[11:19]
@@ -56,7 +59,7 @@ class MainApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Выбор Теста")
-        self.geometry("400x500")
+        set_window_position(self, 100, 100)
 
         style = ttk.Style()
         style.theme_use('vista') 
@@ -98,7 +101,7 @@ class TestApp(tk.Tk):
     def __init__(self, subject, questions=None):
         super().__init__()
         self.title("Тест")
-        self.geometry("400x500")
+        set_window_position(self, 100, 100)
         self.subject = subject
         self.questions = questions
         self.current_question = 0
@@ -215,7 +218,7 @@ class TestApp(tk.Tk):
                 error = self.errors[i]
                 error_label = tk.Label(self.scrollable_frame, text=error, wraplength=350, justify=tk.CENTER, anchor=tk.CENTER)
                 error_label.grid(sticky='ew') 
-            py = open('py.txt', 'a')
+            py = open('test/py.txt', 'a')
             py.write(s + " \n")
             py.write("MATH: " + result)
             py.write(" \n")
@@ -230,7 +233,7 @@ class TestApp(tk.Tk):
                 error = self.errors[i]
                 error_label = tk.Label(self.scrollable_frame, text=error, wraplength=350, justify=tk.CENTER, anchor=tk.CENTER)
                 error_label.grid(sticky='ew')
-            py = open('py.txt', 'a')
+            py = open('test/py.txt', 'a')
             py.write(s + " \n")
             py.write("RUS: " + result)
             py.write(" \n")
@@ -249,6 +252,10 @@ class TestApp(tk.Tk):
         main_app.mainloop()
 
 class MathApp(TestApp):
+    def __init__(self, subject):
+        super().__init__(subject)
+        set_window_position(self, 100, 100)
+            
     def display_question(self):
         global Type_class
         Type_class = 0
@@ -298,6 +305,10 @@ class MathApp(TestApp):
             self.show_results()
             
 class RusApp(TestApp):
+    def __init__(self, subject):
+        super().__init__(subject)
+        set_window_position(self, 100, 100)
+        
     def display_question(self):
         global Type_class
         Type_class = 1      
