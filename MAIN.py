@@ -217,11 +217,11 @@ class TestApp(tk.Tk):
                 error_label.grid(sticky='ew') 
             py = open('py.txt', 'a')
             py.write(s + " \n")
-            py.write("MATH: " + result + "   " + str(self.score) + "/" + "20" + " \n")
+            py.write("MATH: " + result)
             py.write(" \n")
             py.close()
             
-            m = "MATH: " + result + "   " + str(self.score) + "/" + "20" + " \n"
+            m = "MATH: " + result
         else:
             error = " " * 130
             error_label = tk.Label(self.scrollable_frame, text=error, wraplength=350, justify=tk.CENTER, anchor=tk.CENTER)
@@ -232,11 +232,11 @@ class TestApp(tk.Tk):
                 error_label.grid(sticky='ew')
             py = open('py.txt', 'a')
             py.write(s + " \n")
-            py.write("RUS: " + result + "   " + str(self.score) + "/" + "20" + " \n")
+            py.write("RUS: " + result)
             py.write(" \n")
             py.close()
             
-            m = "RUS: " + result + "   " + str(self.score) + "/" + "20" + " \n"
+            m = "RUS: " + result
             
         send(m)
 
