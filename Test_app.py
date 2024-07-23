@@ -1,8 +1,6 @@
 from random import randint
 import datetime
-from datetime import date
 import smtplib
-import os
 from email.mime.text import MIMEText
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -53,42 +51,56 @@ class MainApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Выбор Теста")
+        self.geometry("400x500")
 
         style = ttk.Style()
         style.theme_use('vista') 
-        style.configure('TButton', padding=10, font=('Arial', 12))
-        style.configure('TLabel', font=('Arial', 14))
+        style.configure('TButton', padding=20, font=('Arial', 15), width=15)
+        style.configure('TLabel', font=('Arial', 20))
+        
+        style.configure('Math.TButton', background='#3498db', foreground='#e74c3c')
+        style.map('Math.TButton', background=[('active', '#2980b9')])
+
+        style.configure('Russian.TButton', background='#e74c3c', foreground='#3498db')
+        style.map('Russian.TButton', background=[('active', '#c0392b')])
 
         self.choice_frame = tk.Frame(self)
-        self.choice_frame.pack(pady=20)
+        self.choice_frame.pack(pady=20, anchor=tk.CENTER)
 
-        self.choice_label = ttk.Label(self.choice_frame, text="Выберите тест:", wraplength=350)
-        self.choice_label.pack()
+        self.choice_label = ttk.Label(self.choice_frame, text="  Test your knowledge  ", wraplength=350)
+        self.choice_label.pack(pady=20, anchor=tk.CENTER)
+        
+        self.choice_label_2 = ttk.Label(self.choice_frame, text="Choose test", wraplength=350)
+        self.choice_label_2.pack(pady=20, anchor=tk.CENTER)
 
-        self.math_button = ttk.Button(self.choice_frame, text="Математика", command=lambda: self.start_test("math"), width=15)
-        self.math_button.pack(pady=10)
+        self.math_button = ttk.Button(self.choice_frame, text="Math", style='Math.TButton', command=lambda: self.start_test("math"))
+        self.math_button.pack(pady=20, anchor=tk.CENTER)
 
-        self.russian_button = ttk.Button(self.choice_frame, text="Русский язык", command=lambda: self.start_test("russian"), width=15)
-        self.russian_button.pack(pady=10)
+        self.russian_button = ttk.Button(self.choice_frame, text="Russian language", style='Russian.TButton', command=lambda: self.start_test("russian"))
+        self.russian_button.pack(pady=20, anchor=tk.CENTER)
 
     def start_test(self, subject):
         self.destroy()
         
         if subject == "math":
-            
-            test_app = Math_app(subject)
+            test_app = MathApp(subject)
             test_app.mainloop()
-            
         else:
-            
-            test_app = Rus_app(subject)
-            test_app.mainloop()            
+            test_app = RusApp(subject)
+            test_app.mainloop()
 
-class Math_app(tk.Tk):
-    def __init__(self, subject):
+class TestApp(tk.Tk):
+    def __init__(self, subject, questions=None):
         super().__init__()
         self.title("Тест")
+        self.geometry("400x500")
         self.subject = subject
+        self.questions = questions
+        self.current_question = 0
+        self.score = 0
+        self.errors = []
+        self.start_time = 0
+        self.finish_time = 0
 
         style = ttk.Style()
         style.theme_use('vista')
@@ -111,11 +123,15 @@ class Math_app(tk.Tk):
         self.button_frame = tk.Frame(self.main_frame)
         self.button_frame.pack(pady=10)
 
-        self.start_button = ttk.Button(self.button_frame, text="Начать тест", command=self.start_test, width=15)
-        self.start_button.pack(side=tk.LEFT, padx=10)
+        self.start_button = ttk.Button(self.button_frame, text="Начать тест", command=self.start_test, width=20)
+        self.start_button.pack(pady=5)
 
-        self.submit_button = ttk.Button(self.button_frame, text="Отправить ответ", command=self.submit_answer, width=15)
-        self.submit_button.pack(side=tk.LEFT, padx=10)
+        self.submit_button = ttk.Button(self.button_frame, text="Отправить ответ", command=self.submit_answer, width=20)
+        self.submit_button.pack(pady=5)
+        self.submit_button.config(state=tk.DISABLED)
+
+        self.finish_button = ttk.Button(self.button_frame, text="Закончить тест", command=self.finish_test, width=20)
+        self.finish_button.pack(pady=5)
 
         self.result_frame = tk.Frame(self)
         self.result_frame.pack(pady=20)
@@ -123,67 +139,42 @@ class Math_app(tk.Tk):
         self.results_label = ttk.Label(self.result_frame, text="", wraplength=350)
         self.results_label.pack()
 
-        self.score = 0
-        self.current_question = 0
-        self.start_time = 0
-        self.finish_time = 0
-        self.errors = []
+        self.canvas = tk.Canvas(self.result_frame)
+        self.scrollbar = ttk.Scrollbar(self.result_frame, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas)
 
-        self.result_frame.pack_forget()
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+        self.canvas.config(yscrollcommand=self.scrollbar.set)
+        
+        self.sl = load_questions("test/b_slit.txt")
+        random.shuffle(self.sl)
+        self.ra = load_questions("test/c_razd.txt")
+        random.shuffle(self.ra)
+        self.q = -1
 
     def start_test(self):
         self.start_button.config(state=tk.DISABLED)
-        
+        self.submit_button.config(state=tk.NORMAL)
+        self.finish_button.config(state=tk.NORMAL)
         self.start_time = Get_time()
         self.finish_time = self.start_time + 1
         self.display_question()
 
     def display_question(self):
-        self.a = randint(1, 1000)
-        self.b = randint(1, 1000)
-        
-        if self.a < self.b: self.a, self.b = self.b, self.a
-        
-        self.c = randint(1, 20); 
-        self.d = randint(1, 20); 
-        self.e = self.c * self.d        
-        
-        if self.current_question < 20:
-            self.O = randint(1, 12) - 1
-            ANS = [self.a + self.b, self.a - self.b, self.c * self.d, self.e // self.c, self.a, self.b, self.a, self.b, self.c, self.d, self.e, self.c]
-            self.SS = [str(self.a) + " + " + str(self.b) + " = " + "X",
-                   str(self.a) + " - " + str(self.b) + " = " + "X",
-                   str(self.c) + " * " + str(self.d) + " = " + "X",
-                   str(self.e) + " : " + str(self.c) + " = " + "X",
-                   "X" + " + " + str(self.b) + " = " + str(self.a + self.b),
-                   str(self.a) + " + " + "X" + " = " + str(self.a + self.b),
-                   "X" + " - " + str(self.b) + " = " + str(self.a - self.b),
-                   str(self.a) + " - " + "X" + " = " + str(self.a - self.b),
-                   "X" + " * " + str(self.d) + " = " + str(self.e),
-                   str(self.c) + " * " + "X" + " = " + str(self.e),
-                   "X" + " : " + str(self.c) + " = " + str(self.d),
-                   str(self.e) + " : " + "X" + " = " + str(self.d)]
-            self.question_label.config(text=str(self.current_question + 1) + ") " + self.SS[self.O])
-        else:
-            self.show_results()
+        raise NotImplementedError("Subclasses should implement this method.")
 
     def submit_answer(self):
-        answer = self.answer_entry.get().strip()
+        raise NotImplementedError("Subclasses should implement this method.")
 
-        if self.current_question < 20:
-            ANS = [self.a + self.b, self.a - self.b, self.c * self.d, self.e // self.c, self.a, self.b, self.a, self.b, self.c, self.d, self.e, self.c]
-            if answer == str(ANS[self.O]):
-                self.score += 1
-            else:
-                self.errors += [self.SS[self.O] + "  ---  " + "X = " + str(ANS[self.O])]
-            self.current_question += 1
-            self.finish_time = Get_time()
-            if self.current_question < 20 and self.finish_time - self.start_time < 120:
-                self.display_question()
-            else:
-                self.show_results()
-        else:
-            self.show_results()
+    def finish_test(self):
+        self.show_results()
 
     def show_results(self):
         if self.score < 10:
@@ -192,95 +183,86 @@ class Math_app(tk.Tk):
             result = "ТВОЯ ОЦЕНКА 3: " + str(self.score) + "/20"
         elif self.score >= 15 and self.score < 19:
             result = "ТВОЯ ОЦЕНКА 4: " + str(self.score) + "/20"
-        else:
+        elif self.score >= 19:
             result = "ТВОЯ ОЦЕНКА 5: " + str(self.score) + "/20"
 
-        self.results_label.config(text=result)
+        if self.finish_time - self.start_time >= 120:
+            result += "\nВремя закончилось."
         
-        error_msg = "Ошибки:\n" + "\n".join(self.errors)
-        messagebox.showinfo("Результаты теста", error_msg)        
-
-        current_date = date.today()
-        s = str(current_date) + " "
-        py = open('py.txt', 'a')
-        py.write(s + " \n")
-        py.write("MATH: " + result + "   " + str(self.score) + "/" + "20" + " \n")
-        py.write(" \n")
-        py.close()
-
-        m = "Math" + "   " + str(self.score) + "/" + "20" + " \n"
+        result += "\n"
+        self.results_label.config(text=result, justify=tk.CENTER)
+        self.scrollable_frame.pack_forget() 
         
-        self.destroy() 
+        error_label = tk.Label(self.scrollable_frame, text="Ваши ошибки:", wraplength=350, justify=tk.CENTER, anchor=tk.CENTER)
+        error_label.grid(sticky='ew')       
         
-class Rus_app(tk.Tk):
-    def __init__(self, subject):
-        super().__init__()
-        self.title("Тест")
-        self.subject = subject
-
-        style = ttk.Style()
-        style.theme_use('vista')
-        style.configure('TButton', padding=10, font=('Arial', 12))
-        style.configure('TLabel', font=('Arial', 14))
-        style.configure('TEntry', font=('Arial', 12), padding=5)
-
-        self.main_frame = tk.Frame(self)
-        self.main_frame.pack(pady=20)
-
-        self.question_frame = tk.Frame(self.main_frame)
-        self.question_frame.pack()
-
-        self.question_label = ttk.Label(self.question_frame, text="", wraplength=350)
-        self.question_label.pack(pady=10)
-
-        self.answer_entry = ttk.Entry(self.question_frame, width=30)
-        self.answer_entry.pack(pady=10)
-
-        self.button_frame = tk.Frame(self.main_frame)
-        self.button_frame.pack(pady=10)
-
-        self.start_button = ttk.Button(self.button_frame, text="Начать тест", command=self.start_test, width=15)
-        self.start_button.pack(side=tk.LEFT, padx=10)
-
-        self.submit_button = ttk.Button(self.button_frame, text="Отправить ответ", command=self.submit_answer, width=15)
-        self.submit_button.pack(side=tk.LEFT, padx=10)
-
-        self.result_frame = tk.Frame(self)
-        self.result_frame.pack(pady=20)
-
-        self.results_label = ttk.Label(self.result_frame, text="", wraplength=350)
-        self.results_label.pack()
-
-        self.score = 0
-        self.current_question = 0
-        self.start_time = 0
-        self.finish_time = 0
-
-        self.result_frame.pack_forget()
-
-        self.sl = load_questions("test/b_slit.txt")
-        random.shuffle(self.sl)
-        self.ra = load_questions("test/c_razd.txt")
-        random.shuffle(self.ra)
-
-        self.score = 0
-        self.current_question = 0
-        self.start_time = 0
-        self.finish_time = 0
-
-        self.q = -1
-        self.errors = []
-        self.question = ""
-
-    def start_test(self):
-        self.start_button.config(state=tk.DISABLED)
+        error = " " * 130
+        error_label = tk.Label(self.scrollable_frame, text=error, wraplength=350, justify=tk.CENTER, anchor=tk.CENTER)
+        error_label.grid(sticky='ew')    
         
-        self.start_time = Get_time()
-        self.finish_time = self.start_time + 1
-        self.display_question()
+        for i in range(len(self.errors)):
+            error = self.errors[i]
+            error_label = tk.Label(self.scrollable_frame, text=error, wraplength=350, justify=tk.CENTER, anchor=tk.CENTER)
+            error_label.grid(sticky='ew')               
 
+        self.finish_button.config(text="В главное меню", command=self.return_to_main_menu)
+        self.submit_button.config(state=tk.DISABLED)
+
+    def return_to_main_menu(self):
+        self.destroy()
+        main_app = MainApp()
+        main_app.mainloop()
+
+class MathApp(TestApp):
     def display_question(self):
-        if self.current_question < 30:
+        if self.current_question < 20:
+            self.a = randint(1, 1000)
+            self.b = randint(1, 1000)
+            
+            if self.a < self.b: self.a, self.b = self.b, self.a
+            
+            self.c = randint(1, 20)
+            self.d = randint(1, 20)
+            self.e = self.c * self.d
+            
+            self.O = randint(1, 12) - 1
+            ANS = [self.a + self.b, self.a - self.b, self.c * self.d, self.e // self.c, self.a, self.b, self.a, self.b, self.c, self.d, self.e, self.c]
+            self.SS = [str(self.a) + " + " + str(self.b) + " = " + "X",
+                       str(self.a) + " - " + str(self.b) + " = " + "X",
+                       str(self.c) + " * " + str(self.d) + " = " + "X",
+                       str(self.e) + " : " + str(self.c) + " = " + "X",
+                       "X" + " + " + str(self.b) + " = " + str(self.a + self.b),
+                       str(self.a) + " + " + "X" + " = " + str(self.a + self.b),
+                       "X" + " - " + str(self.b) + " = " + str(self.a - self.b),
+                       str(self.a) + " - " + "X" + " = " + str(self.a - self.b),
+                       "X" + " * " + str(self.d) + " = " + str(self.e),
+                       str(self.c) + " * " + "X" + " = " + str(self.e),
+                       "X" + " : " + str(self.c) + " = " + str(self.d),
+                       str(self.e) + " : " + "X" + " = " + str(self.d)]
+            self.question_label.config(text=str(self.current_question + 1) + ") " + self.SS[self.O])
+        else:
+            self.show_results()
+
+    def submit_answer(self):
+        answer = self.answer_entry.get().strip()
+        if self.current_question < 20:
+            ANS = [self.a + self.b, self.a - self.b, self.c * self.d, self.e // self.c, self.a, self.b, self.a, self.b, self.c, self.d, self.e, self.c]
+            if answer == str(ANS[self.O]):
+                self.score += 1
+            else:
+                self.errors.append(f"{self.SS[self.O]} --- {ANS[self.O]}")
+            self.current_question += 1
+            self.finish_time = Get_time()
+            if self.current_question < 20 and self.finish_time - self.start_time < 120:
+                self.display_question()
+            else:
+                self.show_results()
+        else:
+            self.show_results()
+            
+class RusApp(TestApp):
+    def display_question(self):
+        if self.current_question < 20:
             self.q = randint(0, 1)
             if self.q == 0:
                 self.question = self.sl[0]
@@ -318,32 +300,6 @@ class Rus_app(tk.Tk):
         else:
             self.show_results()
 
-    def show_results(self):
-        if self.score < 25:
-            result = "ТВОЯ ОЦЕНКА 2: " + str(self.score) + "/30"
-        elif self.score >= 25 and self.score < 27:
-            result = "ТВОЯ ОЦЕНКА 2: " + str(self.score) + "/30"
-        elif self.score >= 27 and self.score < 29:
-            result = "ТВОЯ ОЦЕНКА 2: " + str(self.score) + "/30"
-        else:
-            result = "ТВОЯ ОЦЕНКА 2: " + str(self.score) + "/30"
-
-        self.results_label.config(text=result)
-
-        error_msg = "Ошибки:\n" + "\n".join(self.errors)
-        messagebox.showinfo("Результаты теста", error_msg)
-        
-        current_date = date.today()
-        s = str(current_date) + " "        
-        py = open('py.txt', 'a')
-        py.write(s + " \n")
-        py.write("RUS: " + result + "   " + str(self.score) + "/" + "30" + " \n")
-        py.write(" \n")
-        py.close()        
-        
-        m = "Rus" + "   " + str(self.score) + "/" + "30" + " \n"
-
-        self.destroy() 
-
-main_app = MainApp()
-main_app.mainloop()
+if __name__ == "__main__":
+    app = MainApp()
+    app.mainloop()
