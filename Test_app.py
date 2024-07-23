@@ -5,6 +5,11 @@ from email.mime.text import MIMEText
 import tkinter as tk
 from tkinter import messagebox, ttk
 import random
+import datetime
+from datetime import date
+
+global Type_class
+Type_class = -1
 
 def Get_time() -> int:
     dt_now = datetime.datetime.now()
@@ -196,14 +201,37 @@ class TestApp(tk.Tk):
         error_label = tk.Label(self.scrollable_frame, text="Ваши ошибки:", wraplength=350, justify=tk.CENTER, anchor=tk.CENTER)
         error_label.grid(sticky='ew')       
         
-        error = " " * 130
-        error_label = tk.Label(self.scrollable_frame, text=error, wraplength=350, justify=tk.CENTER, anchor=tk.CENTER)
-        error_label.grid(sticky='ew')    
+        global Type_class
         
-        for i in range(len(self.errors)):
-            error = self.errors[i]
+        current_date = date.today()
+        s = str(current_date) + " "        
+        
+        if Type_class == 0:
+            error = " " * 130
             error_label = tk.Label(self.scrollable_frame, text=error, wraplength=350, justify=tk.CENTER, anchor=tk.CENTER)
-            error_label.grid(sticky='ew')               
+            error_label.grid(sticky='ew')             
+            for i in range(len(self.errors)):
+                error = self.errors[i]
+                error_label = tk.Label(self.scrollable_frame, text=error, wraplength=350, justify=tk.CENTER, anchor=tk.CENTER)
+                error_label.grid(sticky='ew') 
+            py = open('py.txt', 'a')
+            py.write(s + " \n")
+            py.write("MATH: " + result + "   " + str(self.score) + "/" + "20" + " \n")
+            py.write(" \n")
+            py.close()
+        else:
+            error = " " * 130
+            error_label = tk.Label(self.scrollable_frame, text=error, wraplength=350, justify=tk.CENTER, anchor=tk.CENTER)
+            error_label.grid(sticky='ew')              
+            for i in range(0, len(self.errors)):
+                error = self.errors[i]
+                error_label = tk.Label(self.scrollable_frame, text=error, wraplength=350, justify=tk.CENTER, anchor=tk.CENTER)
+                error_label.grid(sticky='ew')
+            py = open('py.txt', 'a')
+            py.write(s + " \n")
+            py.write("RUS: " + result + "   " + str(self.score) + "/" + "20" + " \n")
+            py.write(" \n")
+            py.close()
 
         self.finish_button.config(text="В главное меню", command=self.return_to_main_menu)
         self.submit_button.config(state=tk.DISABLED)
@@ -215,6 +243,8 @@ class TestApp(tk.Tk):
 
 class MathApp(TestApp):
     def display_question(self):
+        global Type_class
+        Type_class = 0
         if self.current_question < 20:
             self.a = randint(1, 1000)
             self.b = randint(1, 1000)
@@ -262,6 +292,8 @@ class MathApp(TestApp):
             
 class RusApp(TestApp):
     def display_question(self):
+        global Type_class
+        Type_class = 1      
         if self.current_question < 20:
             self.q = randint(0, 1)
             if self.q == 0:
