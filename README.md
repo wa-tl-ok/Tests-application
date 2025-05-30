@@ -19,4 +19,4 @@ CHART
 
 MAIN
 
-Запускает TESTS и CHART, используя многопоточность (multiprocessing)
+Запускает TESTS и CHART, используя многопоточность (multiprocessing).
